@@ -39,7 +39,7 @@ How to use this: each question has the answer the way I'd actually say it out lo
 - [30. How Do You Handle Tool Execution Failures Within an Agent Loop?](#30-how-do-you-handle-tool-execution-failures-within-an-agent-loop)
 - [31. What Is Offline vs. Online Evaluation, and Do You Need Both?](#31-what-is-offline-vs-online-evaluation-and-do-you-need-both)
 - [32. How Do You Build a Golden Evaluation Dataset?](#32-how-do-you-build-a-golden-evaluation-dataset)
-- [33. How Do You Measure Answer Relevance and Faithfulness Separately?](#33-how-do-you-measure-answer-relevance-and-faithfulness-separately)
+- [33. How Do You Measure Answer Relevance, Faithfulness, and Correctness Separately?](#33-how-do-you-measure-answer-relevance-faithfulness-and-correctness-separately)
 - [34. What Are Guardrails, and What's the Difference Between Input and Output Guardrails?](#34-what-are-guardrails-and-whats-the-difference-between-input-and-output-guardrails)
 - [35. How Would You Implement a Canary Rollout for a New Model Version?](#35-how-would-you-implement-a-canary-rollout-for-a-new-model-version)
 - [36. How Do You Detect Model-Quality Degradation in Production?](#36-how-do-you-detect-model-quality-degradation-in-production)
@@ -458,9 +458,9 @@ The merging step isn't trivial — dense-retrieval scores and BM25 scores aren't
 
 **Answer:**
 
-"Retrieval failures are usually the real root cause of RAG quality problems (question 7). Here are the causes in the order I'd actually check them. Chunking mismatch (question 8) — the way documents were split doesn't line up with how users actually phrase queries, producing chunks that are semantically blended or split apart necessary context. Embedding model mismatch — using a general-purpose embedding model on highly domain-specific content, like dense legal or medical terminology, where the model's training didn't give it a strong enough grasp of that domain. Stale index — source data changed but the vector index wasn't rebuilt, so retrieval confidently returns chunks that no longer reflect reality. Insufficient top-K or missing hybrid search (question 9) — the right chunk is in the index but isn't retrieved because too few candidates are considered, or the query needed exact-match precision that pure dense retrieval doesn't give.
+"Retrieval failures are usually the real root cause of RAG quality problems (question 7). Here are the causes in the order I'd actually check them. Chunking mismatch (question 8) — the way documents were split doesn't line up with how users actually phrase queries, producing chunks that are semantically blended or split apart necessary context. Embedding model mismatch — using a general-purpose embedding model on highly domain-specific content, like dense legal or medical terminology, where the model's training didn't give it a strong enough grasp of that domain. Stale index — source data changed but the vector index wasn't rebuilt, so retrieval confidently returns chunks that no longer reflect reality. Insufficient top-K or missing hybrid search (question 9) — the right chunk is in the index but isn't retrieved because too few candidates are considered, or the query needed exact-match precision that pure dense retrieval doesn't give. Filtering mistakes — a metadata filter (tenant ID, date range, document type) applied before or alongside the vector search is too restrictive, or filtering on the wrong field entirely, so the correct chunk gets excluded before similarity search ever gets a chance to find it. Weak re-ranking (question 11) — the right chunk made it into the initial candidate set, but a re-ranker that's poorly tuned or missing entirely leaves it buried below less-relevant results.
 
-My diagnostic process: build a small, hand-labeled eval set — real or representative queries, each paired with the chunks a human confirms are actually relevant — and measure retrieval precision and recall directly against it. That isolates retrieval from generation entirely, so I can tell for sure whether the problem is 'we're not finding the right information' or 'we found it but the model didn't use it well.'"
+My diagnostic process: build a small, hand-labeled eval set — real or representative queries, each paired with the chunks a human confirms are actually relevant — and measure retrieval precision and recall directly against it. That isolates retrieval from generation entirely. Concretely, for any single bad answer, I'd check two things in order: was the correct chunk actually retrieved, and did it actually reach the prompt sent to the model. If the correct chunk never got retrieved, that's a retrieval (or filtering, or re-ranking) problem. If it was retrieved and made it into the prompt but the answer's still wrong, that's a generation problem — the model had what it needed and didn't use it well."
 
 **Code:**
 
@@ -476,14 +476,24 @@ Diagnostic sequence, isolating retrieval from generation:
      - Precision@K: what fraction of retrieved chunks are actually
        relevant, vs. noise the model now has to sift through?
 
-  3. Low recall -> the problem is retrieval. Investigate chunking
-     (question 8), embedding model fit, or missing hybrid search
-     (question 9) -- the model never even saw the right content.
+  3. Low recall -> the problem is retrieval (or a filter excluding
+     the right chunk before search even runs). Investigate chunking
+     (question 8), embedding model fit, filter logic, or missing
+     hybrid search (question 9) -- the model never even saw the
+     right content.
 
-  4. High recall but poor end-to-end answer quality -> the problem
+  4. Right chunk retrieved but ranked low -> the problem is
+     re-ranking (question 11) -- it's in the candidate set, just
+     buried.
+
+  5. High recall but poor end-to-end answer quality -> the problem
      is generation -- the model saw the right context but didn't
      use it well. Investigate the prompt/grounding instructions
      (question 6), not retrieval.
+
+Fast triage for a single bad answer: did the correct chunk get
+retrieved, and did it actually reach the prompt? Yes to both ->
+generation bug. No to either -> retrieval/filtering/re-ranking bug.
 ```
 
 **Follow-up:**
@@ -500,7 +510,7 @@ This retrieval-vs-generation split is the single highest-leverage diagnostic ste
 
 "Initial retrieval — dense, BM25, or hybrid (question 9) — is optimized for speed across a large corpus, using a cheap similarity computation to narrow a huge candidate set down to a top-K, say 50-100. Re-ranking applies a more expensive, more accurate relevance model to that smaller set, usually a cross-encoder that processes the query and each candidate jointly instead of comparing independently-embedded vectors. It reorders the candidates by a more precise relevance judgment, and only the final, smaller top-N (say 5) after re-ranking actually goes to the LLM.
 
-This two-stage approach — retrieve broadly and cheaply, then re-rank precisely on a smaller set — exists because a cross-encoder is too expensive to run against an entire corpus per query, but is fine against an already-narrowed candidate set. You get a more sophisticated relevance model without paying its full cost across the whole index. I'd add this stage when question 10's diagnostic shows recall is fine — the right chunk is somewhere in the initial top-K — but precision or ordering is poor, with the correct chunk buried below several less-relevant ones."
+This two-stage approach — retrieve broadly and cheaply, then re-rank precisely on a smaller set — exists because a cross-encoder is too expensive to run against an entire corpus per query, but is fine against an already-narrowed candidate set. You get a more sophisticated relevance model without paying its full cost across the whole index. The mental model I'd give: the retriever's job is recall — cast a wide enough net that the right chunk is in there somewhere — and the re-ranker's job is precision — sort that net so the right chunk actually floats to the top. Sending the retriever's raw top-20 or top-50 straight to the LLM works, but it's noisy and burns tokens on irrelevant chunks; re-ranking narrows that down to a small set of genuinely high-quality context. I'd add this stage when question 10's diagnostic shows recall is fine — the right chunk is somewhere in the initial top-K — but precision or ordering is poor, with the correct chunk buried below several less-relevant ones."
 
 **Code:**
 
@@ -529,6 +539,8 @@ Two-stage retrieval, without vs with re-ranking:
 **Follow-up:**
 
 Re-ranking adds real latency — another model call, even against a smaller candidate set — so its value should be validated the same way as question 10: measure precision and recall with and without the re-ranking stage on the same labeled query set. Don't add it reflexively just because it's a well-known best practice. For some corpora and query distributions, fast initial retrieval alone is already precise enough, and the extra latency isn't worth it.
+
+Concretely, I'd run the same query set through the pipeline with and without re-ranking and compare four numbers: precision (and recall) at K, end-to-end answer quality, p95 latency, and cost per request. If re-ranking meaningfully lifts precision or answer quality and the latency/cost hit is acceptable for the product, keep it. If the quality gain is marginal or the latency cost is too high, either tune it — a cheaper or smaller re-ranker model, a smaller candidate set fed into it — or drop it entirely. The decision should come from that comparison, not a gut feeling that re-ranking is "best practice" so it must be worth it.
 
 **Source:** [Cohere — Rerank](https://docs.cohere.com/docs/rerank-overview), [Pinecone — Rerankers](https://www.pinecone.io/learn/series/rag/rerankers/)
 
@@ -1501,7 +1513,7 @@ Dataset size is a much less important lever than most teams assume. A smaller se
 
 ---
 
-## 33. How Do You Measure Answer Relevance and Faithfulness Separately?
+## 33. How Do You Measure Answer Relevance, Faithfulness, and Correctness Separately?
 
 **Answer:**
 
@@ -1509,7 +1521,9 @@ Dataset size is a much less important lever than most teams assume. A smaller se
 
 Faithfulness measures whether a response's claims are actually supported by the retrieved context it was supposed to be grounded in (question 21). The Ragas framework's approach is a concrete, reusable pattern: break the response into individual claims, check each against the retrieved context, and score as the fraction supported. Answer relevance measures something orthogonal: does the response actually address what the user asked, regardless of whether it's factually correct. A clever way to measure this without needing a labeled 'correct answer' is to have a model generate several plausible questions the given response would be answering, then measure embedding similarity between those and the user's actual question. A response that precisely addresses the real question should let a model reconstruct something close to that original question just from reading the response.
 
-Both matter independently because a response can be relevant but not faithful — directly addressing the question with fabricated details not in the retrieved context, a confident, on-topic hallucination — or faithful but not relevant — every claim accurately grounded, but not actually answering what was asked. Measuring only one can hide a real problem the other would have caught."
+Both matter independently because a response can be relevant but not faithful — directly addressing the question with fabricated details not in the retrieved context, a confident, on-topic hallucination — or faithful but not relevant — every claim accurately grounded, but not actually answering what was asked. Measuring only one can hide a real problem the other would have caught.
+
+There's a third metric worth naming separately: answer correctness. Faithfulness checks a response against the retrieved context; correctness checks it against a golden reference answer from your eval set (question 32) — usually via semantic similarity or an LLM-judge comparison to the labeled 'right' answer. A response can be perfectly faithful to the context and still be wrong, if the retrieved context itself was outdated or incomplete. Correctness is the metric that catches that case, since it's checked against ground truth, not just against whatever was retrieved."
 
 **Code:**
 
@@ -1536,6 +1550,14 @@ ANSWER RELEVANCE -- does the response actually address the question?
 
 A response can score high on one and low on the other -- these are
 genuinely independent properties, not two views of one thing
+
+ANSWER CORRECTNESS -- does the response match the golden reference?
+
+  1. Compare the response to the labeled correct answer from the
+     eval set (question 32), not to the retrieved context
+  2. Score via semantic similarity or an LLM-judge comparison
+     -- catches a response that's faithful to the context but wrong
+     -- because the context itself was stale or incomplete
 ```
 
 **Follow-up:**
