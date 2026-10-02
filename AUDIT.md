@@ -35,6 +35,7 @@ what hasn't been done yet.
 | Java Concurrency | Yes | Yes | Yes | 2026-08-25 |
 | Java JVM & GC | Yes | Yes | Yes | 2026-08-25 |
 | OOP Concepts | Yes | Yes | Yes | 2026-08-27 |
+| Java 21 Core Concepts | Partial (Resilience4j claims checked against the Resilience4j docs; JEP claims written against the JEPs but not independently re-audited) | Yes (all 8 compilable examples compiled and run on JDK 21.0.10) | Yes | 2026-10-02 |
 | Spring Boot Internals | Yes | Yes | Yes | 2026-08-25 |
 | Spring Security & OAuth2 | Yes | Yes | Yes | 2026-08-25 |
 | JPA & Hibernate | Yes | Yes | Yes | 2026-08-25 |
