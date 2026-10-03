@@ -45,7 +45,7 @@
 𝗦𝗣𝗥𝗜𝗡𝗚 𝗦𝗘𝗖𝗨𝗥𝗜𝗧𝗬:
  31. A custom JWT filter is a @ Component and is also added with addFilterBefore. It runs twice per request. Why?
  32. A stateless JWT API has CSRF disabled. The team moves the token into a cookie. Is disabling CSRF still safe?
- 33. A `@PreAuthorize` method is called from another method in the same bean. Is the check enforced?
- 34. Two SecurityFilterChain beans, one for `/api/**` and one for `/**`. `/api` requests hit the wrong chain. What did you forget?
+ 33. A @ PreAuthorize method is called from another method in the same bean. Is the check enforced?
+ 34. Two SecurityFilterChain beans, one for /api/** and one for /**. /api requests hit the wrong chain. What did you forget?
  35. The JWT has scope "admin", but hasRole("ADMIN") returns 403 on the resource server. Why?
  36. SecurityContextHolder.getContext() inside an @ Async method has no authentication. Why, and what is the fix?

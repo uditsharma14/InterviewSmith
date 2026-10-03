@@ -37,14 +37,26 @@ def strip_code_fences(content: str) -> str:
 
 
 def slugify(heading: str) -> str:
-    """GitHub's markdown heading-to-anchor algorithm (github-slugger): strip
-    emphasis, lowercase, drop non-word/space/hyphen chars, then convert each
+    """GitHub's markdown heading-to-anchor algorithm (github-slugger), run on
+    the heading's rendered text: drop code-span backticks and emphasis
+    markers, lowercase, drop non-word/space/hyphen chars, then convert each
     remaining space to a hyphen INDIVIDUALLY (no collapsing) — a punctuation
     character stripped from between two spaces (e.g. "A & B" -> "A  B")
-    must become a double hyphen ("a--b"), not a single one."""
-    text = re.sub(r"`([^`]*)`", r"\1", heading)  # strip inline code backticks
-    text = re.sub(r"[*_]", "", text)  # strip bold/italic markers
-    text = text.strip().lower()
+    must become a double hyphen ("a--b"), not a single one.
+
+    Underscores are word characters to github-slugger, so they survive in
+    the anchor ("`REQUIRES_NEW`" -> "requires_new"). Only an underscore used
+    as an emphasis delimiter outside a code span is removed."""
+    parts = re.split(r"(`[^`]*`)", heading)
+    rendered = []
+    for part in parts:
+        if part.startswith("`") and part.endswith("`") and len(part) >= 2:
+            rendered.append(part[1:-1])  # code span: content is literal
+        else:
+            part = part.replace("*", "")
+            part = re.sub(r"(?<![0-9A-Za-z])_+|_+(?![0-9A-Za-z])", "", part)
+            rendered.append(part)
+    text = "".join(rendered).strip().lower()
     text = re.sub(r"[^\w\s-]", "", text)  # drop punctuation
     text = text.replace(" ", "-")
     return text
