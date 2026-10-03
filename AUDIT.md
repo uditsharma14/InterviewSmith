@@ -57,6 +57,9 @@ what hasn't been done yet.
 | React | Yes | No | Yes | 2026-08-24 |
 | Next.js | Yes | No | Yes | 2026-08-29 |
 | Design Patterns | Yes | Yes | Yes | 2026-08-24 |
+| SQL & Data Modeling | Partial (spot-checked; five corrections — see `audits/2026-10-03-sql-guides-integration.md`) | Partial (run on PostgreSQL 16.14 for syntax; SCD Type 2 load tested end to end; fragments that reference undefined tables not executed) | Yes | 2026-10-03 |
+| SQL Query Practice | Partial (dialect claims spot-checked against MySQL/SQL Server docs; MySQL 9.3 claims carried over from the original author's run, not re-run) | Yes (every block with a stated output re-run on PostgreSQL 16.14; all matched) | Yes | 2026-10-03 |
+| Oracle Window Functions | Partial (version-sensitive Oracle claims checked against the Oracle docs; one Postgres claim corrected) | Partial (sections 1–7 run on PostgreSQL 16.14, all matched; Oracle-only section 8 not run on Oracle) | Yes | 2026-10-03 |
 
 `Forward-Deployed & Customer-Facing Engineering/README.md` is a
 placeholder stub with no content. `Further Reading/System_Design_and_AI_Reading_List.md`
@@ -114,6 +117,13 @@ fetches) — see that file's own note on this.
   JSX/TS support, not just a JVM/Python environment; see `ROADMAP.md`.
 - 13 of 21 guides have not been measured or restructured for answer
   length since the original repository-wide measurement.
+- The three `Databases & SQL/` guides use their own answer structure
+  (20-second answer / details / example / likely follow-ups) with one
+  consolidated Sources section per guide, not per-question `**Source:**`
+  lines. The Oracle guide's section 8 outputs are expected values, not
+  captured Oracle runs.
+- The "Repository-wide counts" section above was measured on 2026-08-29 and
+  predates the `Databases & SQL/` guides and Java 21 Core Concepts.
 
 ## Known limitations
 
@@ -291,6 +301,14 @@ Detailed findings, one file per audit pass:
   deployment options. Every claim checked against live nextjs.org docs
   before writing, including the version-sensitive `params`/
   `searchParams` Promise change introduced in Next.js 15.
+
+- `audits/2026-10-03-sql-guides-integration.md` — moved three SQL
+  guides into a new `Databases & SQL/` folder; removed personal and
+  employer-specific content; five technical corrections; every query with
+  a stated output re-run on PostgreSQL 16.14. Also fixed a `slugify()` bug
+  in `scripts/check_internal_links.py` and `scripts/add_toc.py` (underscores
+  were stripped, unlike GitHub), which exposed and fixed three broken
+  anchor links in Transactions and the Glossary.
 
 See `CONTRIBUTING.md` for the accuracy and citation policy new material
 is expected to meet, and `ROADMAP.md` for planned work.

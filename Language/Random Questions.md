@@ -27,3 +27,25 @@
  18. Rate limiter for a public API on 40 servers. Where does the counter live, and where is the race?
  19. A client retries a payment call after a timeout. How do you guarantee one charge?
  20. Notification service, email plus SMS plus push. SMS provider dies for 20 minutes. What happens to email and push?
+
+𝗝𝗪𝗧:
+ 21. A user logs out, but their JWT was copied earlier. Does the token still work, and what limits the damage?
+ 22. The server accepts a token whose header says "alg": "none". Which check is missing?
+ 23. 12 microservices verify tokens with one shared HS256 secret. What is the risk, and what do you switch to?
+ 24. Roles are stored as JWT claims. An admin revokes a user's role. When does the change take effect?
+ 25. The refresh token is kept in localStorage. Which attack steals it, and where should it live instead?
+
+𝗢𝗔𝗨𝗧𝗛 𝟮.𝟬 / 𝗢𝗜𝗗𝗖:
+ 26. An SPA still uses the implicit flow. Why is it deprecated, and what replaces it?
+ 27. A malicious app on the phone intercepts the authorization code. What stops it from exchanging the code for tokens?
+ 28. The auth server matches redirect_uri by prefix. What can an attacker do with that?
+ 29. Your API accepts the ID token as a bearer token. What is wrong with that?
+ 30. The callback does not check the state parameter. Which attack is now open?
+
+𝗦𝗣𝗥𝗜𝗡𝗚 𝗦𝗘𝗖𝗨𝗥𝗜𝗧𝗬:
+ 31. A custom JWT filter is a @ Component and is also added with addFilterBefore. It runs twice per request. Why?
+ 32. A stateless JWT API has CSRF disabled. The team moves the token into a cookie. Is disabling CSRF still safe?
+ 33. A `@PreAuthorize` method is called from another method in the same bean. Is the check enforced?
+ 34. Two SecurityFilterChain beans, one for `/api/**` and one for `/**`. `/api` requests hit the wrong chain. What did you forget?
+ 35. The JWT has scope "admin", but hasRole("ADMIN") returns 403 on the resource server. Why?
+ 36. SecurityContextHolder.getContext() inside an @ Async method has no authentication. Why, and what is the fix?

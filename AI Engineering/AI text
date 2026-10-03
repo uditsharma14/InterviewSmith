@@ -1,0 +1,21 @@
+Mm. Sure. From the last 10 minutes, here are some interview Q&A worth revising. First, 'what are common causes of poor RAG retrieval quality?' Answer, chunking issues, embedding model mismatch, stale indexes, filtering mistakes, or weak re-ranking. The key is to isolate which stage is failing first. Second, how do you distinguish retrieval problems from generation problems? Answer. Check if the correct chunk was retrieved and whether it actually reached the prompt. If yes, it's generation. If no, it's retrieval or re-ranking. Third, what metrics would you use to evaluate?
+
+
+
+Right. Separate retrieval metrics like precision at K or recall at K, from generation metrics like groundedness, answer correctness, and relevancy. Fourth, why do we even need re-ranking if vector search already returns top K?
+
+
+
+Exactly. Retriever optimizes recall, re-ranker optimizes precision.
+
+
+
+Mm-hmm
+
+
+
+Sending all 20 chunks can add noise and tokens. So re-ranking narrows it to higher quality context. Fifth, how do you decide if the re-ranker is worth the extra latency?
+
+
+
+Right. Compare with and without re-ranking on precision, answer quality, p95 latency, and cost. If quality gains are worth the latency, keep it. Otherwise, tune or drop it. The mental model I'd memorize is: retriever for recall, re-ranker for precision, always benchmark trade-offs.
