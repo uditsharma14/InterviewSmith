@@ -68,6 +68,11 @@ exclude = [
   # title using LeetCode's own URL format. See the note at the top of
   # `Data Structures & Algorithms/DSA_Pattern_Based_Question_Bank.md`.
   "^https?://(www\\.)?leetcode\\.com/",
+  # dev.mysql.com (MySQL Reference Manual) returned 403 to lychee in CI
+  # and to curl with a full browser user agent, but a second independent
+  # fetch tool loaded the real page content (insert-on-duplicate.html,
+  # checked 2026-10-03) — bot-blocking, not a removed page.
+  "^https?://dev\\.mysql\\.com/",
 ]
 
 # Anchors on some third-party docs sites are JS-rendered and not present in
