@@ -886,7 +886,7 @@ function UserProfile({ userId }) {
 - *"Why not just fetch server data with `useEffect` and `useState`, the way it's often first taught?"* — That approach lacks caching (refetches on every mount, even for data another component already fetched), request deduplication, background refetching, and standardized loading/error state — a dedicated library provides all of this without hand-rolling and re-testing it per feature.
 - *"What would specifically justify introducing Redux over Context plus local state?"* — A concrete need Context/local state can't cleanly meet — enforced unidirectional update patterns across a large team, time-travel debugging, or genuinely complex cross-feature state interactions — not "Redux is the standard choice" as a reason by itself.
 
-**Sources:** [React — Managing State](https://react.dev/learn/managing-state), [TanStack Query — Overview](https://tanstack.com/query/latest/docs/framework/react/overview)
+**Sources:** [React — Managing State](https://react.dev/learn/managing-state), [TanStack Query — Overview](https://github.com/TanStack/query/blob/main/docs/framework/react/overview.md)
 
 ---
 
@@ -981,7 +981,7 @@ describe('LoginForm', () => {
 | React — `useActionState` | https://react.dev/reference/react/useActionState |
 | React — `useFormStatus` | https://react.dev/reference/react-dom/hooks/useFormStatus |
 | React — Managing State | https://react.dev/learn/managing-state |
-| TanStack Query — Overview | https://tanstack.com/query/latest/docs/framework/react/overview |
+| TanStack Query — Overview | https://github.com/TanStack/query/blob/main/docs/framework/react/overview.md |
 | React Testing Library — Guiding Principles | https://testing-library.com/docs/guiding-principles/ |
 | Testing Library — `user-event` | https://testing-library.com/docs/user-event/intro/ |
 | React — Catching Rendering Errors with an Error Boundary | https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary |

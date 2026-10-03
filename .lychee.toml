@@ -73,6 +73,11 @@ exclude = [
   # fetch tool loaded the real page content (insert-on-duplicate.html,
   # checked 2026-10-03) — bot-blocking, not a removed page.
   "^https?://dev\\.mysql\\.com/",
+  # resilience4j.readme.io (the only official Resilience4j docs) returns
+  # intermittent 500s to CI — a different page fails each run (circuitbreaker,
+  # then bulkhead) — while every cited page returned 200 on 15 of 15 manual
+  # fetches on 2026-10-03. Server flakiness, not removed pages.
+  "^https?://resilience4j\\.readme\\.io/",
 ]
 
 # Anchors on some third-party docs sites are JS-rendered and not present in
